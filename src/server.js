@@ -10,6 +10,7 @@ import { getModelName } from './services/Integration.js';
 import { routeCommand } from './controllers/commandRouter.js';
 import oauthRouter from './routes/OAuth.js';
 import mcpServer from './routes/mcpServer.js';
+import logger from './utils/logger.js';
 
 dotenv.config();
 
@@ -35,12 +36,12 @@ app.use(express.json());
 
 const { AZURE_ORG_URL, AZURE_PROJECT, AZURE_PAT, OPENROUTER_API_KEY } = process.env;
 if (!AZURE_ORG_URL || !AZURE_PROJECT || !AZURE_PAT) {
-  console.error("❌ Missing Azure DevOps config in .env (AZURE_ORG_URL, AZURE_PROJECT, AZURE_PAT)");
+  logger.error("❌ Missing Azure DevOps config in .env (AZURE_ORG_URL, AZURE_PROJECT, AZURE_PAT)");
   process.exit(1);
 }
 
 const AI_ENABLED = !!OPENROUTER_API_KEY;
-console.log(AI_ENABLED ? `✨ OpenRouter AI enabled (model: ${getModelName()})` : "ℹ️ AI disabled");
+logger.info(AI_ENABLED ? `✨ OpenRouter AI enabled (model: ${getModelName()})` : "ℹ️ AI disabled");
 
 // Routers
 app.use('/oauth', oauthRouter);
@@ -48,7 +49,7 @@ app.use('/mcp', mcpServer);
 
 io.on('connection', (socket) => {
   const sessionId = uuidv4();
-  console.log('🟢 User connected:', sessionId);
+  logger.info(`🟢 User connected: ${sessionId}`);
 
   socket.emit('bot_message', 'Hello! I’m your Azure Boards Assistant.<br>Loading sprint data...');
 
@@ -66,26 +67,26 @@ io.on('connection', (socket) => {
       const reply = await routeCommand(text);
       socket.emit('bot_message', reply);
     } catch (err) {
-      console.error('handleMessage error:', err);
+      logger.error(`handleMessage error: ${err}`);
       socket.emit('bot_message', '⚠️ Sorry, something went wrong handling that request. Please try again.');
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('🔴 User disconnected:', sessionId);
+    logger.info(`🔴 User disconnected: ${sessionId}`);
   });
 });
 
 // Startup
 (async () => {
-  console.log('🚀 Starting Azure Boards Assistant...');
+  logger.info('🚀 Starting Azure Boards Assistant...');
   await loadSprintData();
   setInterval(async () => {
-    console.log('🔄 Refreshing sprint data...');
+    logger.info('🔄 Refreshing sprint data...');
     await loadSprintData();
   }, 15 * 60 * 1000);
 
   httpServer.listen(PORT, () => {
-    console.log(`Server at http://localhost:${PORT} (AI: ${AI_ENABLED ? `ENABLED (${getModelName()})` : 'DISABLED'})`);
+    logger.info(`Server at http://localhost:${PORT} (AI: ${AI_ENABLED ? `ENABLED (${getModelName()})` : 'DISABLED'})`);
   });
 })();

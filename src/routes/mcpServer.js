@@ -2,6 +2,7 @@ import express from "express";
 import { sprintCache, searchWorkItems } from "../services/sprintDataLoader.js";
 import { createUserStory, createTask, listWorkItems, getWorkItem } from "../services/workItemManager.js";
 import dotenv from "dotenv";
+import logger from '../utils/logger.js';
 dotenv.config();
 
 /**
@@ -65,7 +66,7 @@ export function createMCPServer() {
 
   // SSE endpoint for streaming MCP communication
   router.get("/sse", (req, res) => {
-    console.log("🔌 SSE connection established");
+    logger.info("🔌 SSE connection established");
 
     // Set headers for SSE
     res.setHeader("Content-Type", "text/event-stream");
@@ -83,19 +84,19 @@ export function createMCPServer() {
 
     // Clean up on close
     req.on("close", () => {
-      console.log("🔴 SSE connection closed");
+      logger.info("🔴 SSE connection closed");
       clearInterval(keepAliveInterval);
     });
   });
 
   // List available tools (standard endpoint)
   router.post("/list-tools", (req, res) => {
-    console.log("📋 MCP: Listing available tools");
+    logger.info("📋 MCP: Listing available tools");
     res.json({ tools });
   });
 
   router.get("/tools", (req, res) => {
-    console.log("📋 MCP: GET tools list");
+    logger.info("📋 MCP: GET tools list");
     res.json({ tools });
   });
 
@@ -103,7 +104,7 @@ export function createMCPServer() {
   router.post("/tools/search_work_items", async (req, res) => {
     try {
       const { query, type = "All" } = req.body;
-      console.log(`🔍 MCP: Searching work items for "${query}" (type: ${type})`);
+      logger.info(`🔍 MCP: Searching work items for "${query}" (type: ${type})`);
 
       const results = searchWorkItems(query);
 
@@ -133,7 +134,7 @@ export function createMCPServer() {
         ],
       });
     } catch (error) {
-      console.error("❌ MCP: Search error:", error.message);
+      logger.error(`❌ MCP: Search error: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   });
@@ -142,7 +143,7 @@ export function createMCPServer() {
   router.post("/tools/get_work_item", async (req, res) => {
     try {
       const { id } = req.body;
-      console.log(`📄 MCP: Getting work item #${id}`);
+      logger.info(`📄 MCP: Getting work item #${id}`);
 
       const workItem = await getWorkItem(id);
 
@@ -173,7 +174,7 @@ export function createMCPServer() {
         ],
       });
     } catch (error) {
-      console.error("❌ MCP: Get work item error:", error.message);
+      logger.error(`❌ MCP: Get work item error: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   });
@@ -181,7 +182,7 @@ export function createMCPServer() {
   // Tool: Get current sprint
   router.post("/tools/get_current_sprint", async (req, res) => {
     try {
-      console.log("📊 MCP: Getting current sprint");
+      logger.info("📊 MCP: Getting current sprint");
 
       if (sprintCache.stories.length === 0) {
         return res.json({
@@ -224,7 +225,7 @@ export function createMCPServer() {
         ],
       });
     } catch (error) {
-      console.error("❌ MCP: Get current sprint error:", error.message);
+      logger.error(`❌ MCP: Get current sprint error: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   });
@@ -232,7 +233,7 @@ export function createMCPServer() {
   // Tool: List all sprints
   router.post("/tools/list_all_sprints", async (req, res) => {
     try {
-      console.log("📊 MCP: Listing all sprints");
+      logger.info("📊 MCP: Listing all sprints");
 
       if (sprintCache.stories.length === 0) {
         return res.json({
@@ -269,7 +270,7 @@ export function createMCPServer() {
         ],
       });
     } catch (error) {
-      console.error("❌ MCP: List sprints error:", error.message);
+      logger.error(`❌ MCP: List sprints error: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   });

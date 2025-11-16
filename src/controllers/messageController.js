@@ -20,6 +20,7 @@ import {
   resolveSprintPath,
   resolveTitleOrIdWithShortlist,
 } from '../utils/helpers.js';
+import logger from '../utils/logger.js';
 
 // In-memory conversation state
 const conversationState = {};
@@ -58,6 +59,7 @@ export async function listItemsInSprint(sprintNumber, itemType = null) {
     const header = `🧾 ${itemType ? `${itemType}s` : 'Work Items'} in Sprint ${sprintNumber}`;
     return `${header}:<br>${rows.map(i => `#${i.id}: ${i.title} [${i.state}]`).join('<br>')}`;
   } catch (e) {
+    logger.error(`Error in listItemsInSprint: ${e.message}`);
     return `⚠️ Unable to list items: ${e?.message || 'unexpected error'}`;
   }
 }
@@ -99,7 +101,7 @@ export async function describeWorkItem(query) {
                 return `${header}<br><br>${summary}`;
             }
         } catch (e) {
-            // Fall through to deterministic on AI error
+            logger.error(`AI summarization failed for work item #${id}: ${e.message}`);
         }
     }
 
@@ -146,6 +148,7 @@ export async function createWorkItem(sprintLabel, itemType, title) {
 
         return `✅ Created ${itemType} #${created.id} in ${sprintLabel}`;
     } catch (e) {
+        logger.error(`Error in createWorkItem: ${e.message}`);
         return `⚠️ Failed to create ${itemType}: ${e.message || 'unexpected error'}`;
     }
 }
@@ -164,6 +167,7 @@ export async function moveWorkItemState(id, state) {
         await updateWorkItemState(id, canonicalState);
         return `✅ Moved #${id} to ${canonicalState}.`;
     } catch (e) {
+        logger.error(`Error in moveWorkItemState: ${e.message}`);
         return `⚠️ Failed to update state: ${e.message || 'unexpected error'}`;
     }
 }
@@ -175,6 +179,7 @@ export async function moveWorkItemToSprint(id, sprintLabel) {
         await updateWorkItemIteration(id, sprintPath);
         return `✅ Moved #${id} to ${sprintLabel}.`;
     } catch (e) {
+        logger.error(`Error in moveWorkItemToSprint: ${e.message}`);
         return `⚠️ Failed to move item: ${e.message || 'unexpected error'}`;
     }
 }
@@ -187,7 +192,8 @@ export async function handleGenericAIQuery(text) {
         const aiCtx = await buildAIContext();
         const response = await queryWithAI(text, aiCtx);
         return `🤖 <b>AI Assistant:</b><br><br>${response || '⚠️ AI returned no content.'}`;
-    } catch {
+    } catch (e) {
+        logger.error(`Error in handleGenericAIQuery: ${e.message}`);
         return '⚠️ AI is temporarily unavailable. Please try again.';
     }
 }

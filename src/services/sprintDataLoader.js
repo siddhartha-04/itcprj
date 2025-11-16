@@ -99,7 +99,7 @@ async function fetchAllWorkItems() {
 
 export async function loadSprintData() {
   try {
-    console.log("📊 Loading sprint data...");
+    logger.info("📊 Loading sprint data...");
     const teamsUrl = `${AZURE_ORG_URL}/_apis/projects/${AZURE_PROJECT}/teams?api-version=7.1`;
     const { data: teamsRes } = await axios.get(teamsUrl, { headers: authHeader });
     const teams = teamsRes.value || [];
@@ -188,6 +188,7 @@ export function searchWorkItems(term) {
 // sprintDataLoader.js — robust loader: true current-by-date, stable cache, explicit Iteration Paths, includes description
 import axios from "axios";
 import dotenv from "dotenv";
+import logger from '../utils/logger.js';
 dotenv.config();
 
 const { AZURE_ORG_URL, AZURE_PROJECT, AZURE_PAT } = process.env;
@@ -302,7 +303,7 @@ export async function loadSprintData() {
       sprintCache.stories = [{ sprintName: "All Work Items", sprintId: "all", path: "/", stories: allItems }];
       sprintCache.lastUpdated = new Date();
       lastGood = { ...sprintCache };
-      console.log(`✅ Loaded ${allItems.length} work items (fallback)`);
+      logger.info(`✅ Loaded ${allItems.length} work items (fallback)`);
       return;
     }
 
@@ -314,7 +315,7 @@ export async function loadSprintData() {
       sprintCache.stories = [{ sprintName: "All Work Items", sprintId: "all", path: "/", stories: allItems }];
       sprintCache.lastUpdated = new Date();
       lastGood = { ...sprintCache };
-      console.log(`✅ Loaded ${allItems.length} work items (fallback)`);
+      logger.info(`✅ Loaded ${allItems.length} work items (fallback)`);
       return;
     }
 
@@ -331,14 +332,14 @@ export async function loadSprintData() {
     }
     sprintCache.lastUpdated = new Date();
     lastGood = { ...sprintCache };
-    console.log(`✅ Loaded ${selected.length} sprints (current-first) with ${total} total items`);
+    logger.info(`✅ Loaded ${selected.length} sprints (current-first) with ${total} total items`);
   } catch (e) {
-    console.error("❌ Error loading sprint data:", e.response?.data || e.message);
+    logger.error(`❌ Error loading sprint data: ${e.response?.data || e.message}`);
     if (lastGood) {
       sprintCache.sprints = lastGood.sprints;
       sprintCache.stories = lastGood.stories;
       sprintCache.lastUpdated = lastGood.lastUpdated;
-      console.log("↩️ Restored last good sprint cache.");
+      logger.info("↩️ Restored last good sprint cache.");
       return;
     }
     const allItems = await fetchAllWorkItems();
@@ -346,7 +347,7 @@ export async function loadSprintData() {
     sprintCache.stories = [{ sprintName: "All Work Items", sprintId: "all", path: "/", stories: allItems }];
     sprintCache.lastUpdated = new Date();
     lastGood = { ...sprintCache };
-    console.log(`✅ Loaded ${allItems.length} work items (fallback mode)`);
+    logger.info(`✅ Loaded ${allItems.length} work items (fallback mode)`);
   }
 }
 
