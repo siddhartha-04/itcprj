@@ -59,6 +59,30 @@ const commandRoutes = [
     pattern: /all sprints/i,
     handler: getAllSprintsSummary,
   },
+  {
+    pattern: /^which\s+bugs?\s+(?:are\s+linked\s+to|link(?:ed)?\s+with)\s+(.+)$/i,
+    handler: text => controller.getLinkedBugs(text.match(/^which\s+bugs?\s+(?:are\s+linked\s+to|link(?:ed)?\s+with)\s+(.+)$/i)[1]),
+  },
+  {
+    pattern: /^list\s+all\s+issues?\s+that\s+don'?t\s+have\s+any\s+child\s+tasks?(?:\s+in\s+sprint\s+(.+))?$/i,
+    handler: text => controller.listIssuesWithoutChildren(text.match(/^list\s+all\s+issues?\s+that\s+don'?t\s+have\s+any\s+child\s+tasks?(?:\s+in\s+sprint\s+(.+))?$/i)[1]),
+  },
+  {
+    pattern: /^\s*which\s+(items|issues|tasks|work\s*items)\s+are\s+unassigned\s+in\s+to\s*-?\s*do(?:\s+in\s+sprint\s+(.+?))?(?:\s|,|\.|!|$)/i,
+    handler: (text) => {
+        const match = text.match(/^\s*which\s+(items|issues|tasks|work\s*items)\s+are\s+unassigned\s+in\s+to\s*-?\s*do(?:\s+in\s+sprint\s+(.+?))?(?:\s|,|\.|!|$)/i);
+        const itemType = match[1].includes('issue') ? 'Issue' : match[1].includes('task') ? 'Task' : null;
+        return controller.listUnassigned(itemType, match[2]);
+    },
+  },
+  {
+    pattern: /list\s+(issues|tasks|work items)/i,
+    handler: (text) => {
+        const match = text.match(/list\s+(issues|tasks|work items)/i);
+        const itemType = match[1] === 'work items' ? 'All' : match[1].charAt(0).toUpperCase() + match[1].slice(1, -1);
+        return controller.listWorkItems(itemType);
+    },
+  },
 ];
 
 export async function routeCommand(text) {

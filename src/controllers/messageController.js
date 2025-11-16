@@ -197,3 +197,90 @@ export async function handleGenericAIQuery(text) {
         return '⚠️ AI is temporarily unavailable. Please try again.';
     }
 }
+
+export async function getLinkedBugs(query) {
+    try {
+        const { id, shortlist } = await resolveTitleOrIdWithShortlist(query);
+
+        if (!id) {
+            if (shortlist && shortlist.length) {
+                const tips = shortlist.map(s => `#${s.id} — ${s.title}`).join('<br>');
+                return `⚠️ Could not find that work item.<br>Did you mean:<br>${tips}`;
+            }
+            return `⚠️ Could not find a work item matching "${query}".`;
+        }
+
+        const wi = await getWorkItem(id);
+        if (!wi) return `⚠️ Work item #${id} not found.`;
+
+        const allIds = relatedIdsFromRelations(wi);
+        if (!allIds.length) return `No linked Bugs found for #${wi.id}.`;
+
+        const fields = ["System.Id", "System.Title", "System.WorkItemType", "System.State"];
+        const { default: axios } = await import('axios');
+        const url = `${process.env.AZURE_ORG_URL}/_apis/wit/workitems?ids=${allIds.join(',')}&fields=${fields.join(',')}&api-version=7.1`;
+        const headers = { Authorization: `Basic ${Buffer.from(`:${process.env.AZURE_PAT}`).toString('base64')}` };
+        const { data } = await axios.get(url, { headers, timeout: 15000 });
+        const bugs = (data.value || []).filter(w => w.fields["System.WorkItemType"] === "Bug");
+
+        return bugs.length ? `Linked Bugs:<br>${bugs.map(b => `#${b.id} ${b.fields["System.Title"]} [${b.fields["System.State"]}]`).join("<br>")}` : `No linked Bugs found for #${wi.id}.`;
+    } catch (e) {
+        logger.error(`Error in getLinkedBugs: ${e.message}`);
+        return `⚠️ Unable to fetch linked bugs: ${e.message || 'unexpected error'}`;
+    }
+}
+
+export async function listIssuesWithoutChildren(sprintLabel) {
+    try {
+        let iterationPath = null;
+        if (sprintLabel) {
+            iterationPath = resolveSprintPath(sprintLabel);
+            if (!iterationPath) return `⚠️ Sprint "${sprintLabel}" not found.`;
+        } else if (sprintCache.stories[0]?.path) {
+            iterationPath = sprintCache.stories[0].path;
+        } else {
+            return `⚠️ No sprint context available. Try: "in sprint 2".`;
+        }
+
+        const issues = await listItemsInIteration({ iterationPath, type: "Issue" });
+        if (!issues.length) return `No Issues found in that sprint.`;
+
+        const { default: axios } = await import('axios');
+        const headers = { Authorization: `Basic ${Buffer.from(`:${process.env.AZURE_PAT}`).toString('base64')}` };
+        const relUrls = issues.map(i => `${process.env.AZURE_ORG_URL}/_apis/wit/workitems/${i.id}?api-version=7.0&$expand=relations`);
+        const relRes = await Promise.allSettled(relUrls.map(u => axios.get(u, { headers, timeout: 15000 })));
+        const noTaskIssues = [];
+        for (const rr of relRes) {
+            if (rr.status !== "fulfilled") continue;
+            const wi = rr.value.data;
+            const kids = childIdsFromRelations(wi);
+            if (!kids.length) noTaskIssues.push(`#${wi.id} ${wi.fields["System.Title"]}`);
+        }
+        return noTaskIssues.length ? `Issues without child Tasks:<br>${noTaskIssues.join("<br>")}` : `All Issues in that sprint have child Tasks.`;
+    } catch (e) {
+        logger.error(`Error in listIssuesWithoutChildren: ${e.message}`);
+        return `⚠️ Unable to check for childless issues: ${e.message || 'unexpected error'}`;
+    }
+}
+
+export async function listUnassigned(itemType, sprintLabel) {
+    try {
+        let iterationPath = null;
+        if (sprintLabel) {
+            iterationPath = resolveSprintPath(sprintLabel);
+            if (!iterationPath) return `⚠️ Sprint "${sprintLabel}" not found.`;
+        }
+
+        const rows = await listUnassignedInToDo({ type: itemType, iterationPath });
+        if (!rows?.length) {
+            return sprintLabel
+                ? `There are no unassigned ${itemType || "items"} in To Do for ${sprintLabel}.`
+                : `There are no unassigned ${itemType || "items"} in To Do.`;
+        }
+        const heading = sprintLabel ? `Unassigned in <b>To Do</b> (Sprint: ${sprintLabel})` : `Unassigned in <b>To Do</b>`;
+        return `${heading}:<br>${rows.map((r) => `#${r.id}: ${r.title} (${r.type})`).join("<br>")}`;
+    } catch (e) {
+        logger.error(`Error in listUnassigned: ${e.message}`);
+        return `⚠️ Unable to list unassigned items: ${e.message || 'unexpected error'}`;
+    }
+}

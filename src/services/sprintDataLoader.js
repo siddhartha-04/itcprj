@@ -292,7 +292,7 @@ async function fetchAllWorkItems() {
 
 export async function loadSprintData() {
   try {
-    console.log("📊 Loading sprint data...");
+    logger.info("📊 Loading sprint data...");
     const teamsUrl = `${AZURE_ORG_URL}/_apis/projects/${AZURE_PROJECT}/teams?api-version=7.1`;
     const { data: teamsRes } = await axios.get(teamsUrl, { headers: authHeader });
     const teams = teamsRes.value || [];
