@@ -1,0 +1,20 @@
+{
+  "servers": {
+    "azure-devops": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "RISHCHITH20241CSE0916",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ],
+      "env": {
+        "AZURE_DEVOPS_PAT": ""
+      }
+    }
+  }
+}
