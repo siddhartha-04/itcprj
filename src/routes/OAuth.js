@@ -1,6 +1,7 @@
 import express from "express";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import logger from '../utils/logger.js';
 dotenv.config();
 
 const router = express.Router();
@@ -22,9 +23,9 @@ clients.set(CHATGPT_CLIENT_ID, {
   ],
 });
 
-console.log("🔐 OAuth Client Credentials:");
-console.log(`   Client ID: ${CHATGPT_CLIENT_ID}`);
-console.log(`   Client Secret: ${CHATGPT_CLIENT_SECRET}`);
+logger.info("🔐 OAuth Client Credentials:");
+logger.info(`   Client ID: ${CHATGPT_CLIENT_ID}`);
+logger.info(`   Client Secret: ${CHATGPT_CLIENT_SECRET}`);
 
 /**
  * OAuth Authorization Endpoint
