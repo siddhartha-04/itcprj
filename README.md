@@ -106,3 +106,11 @@ Once the server is running, you can connect to it using a Socket.IO client or us
     `what are the main risks in the current sprint?`
     `summarize the last two sprints`
     `what should we focus on next?`
+
+## Architecture Overview
+
+This project's architecture is designed to be modular and scalable. For a deeper understanding of the system design and data flows, please refer to the following documents:
+
+-   **[High-Level Design (HLD)](./docs/high-level-design.md):** An overview of the system architecture, core components, and their interactions.
+-   **[Low-Level Design (LLD)](./docs/low-level-design.md):** A detailed breakdown of the key modules, their functions, and data structures.
+-   **[Data Flow Diagram (DFD)](./docs/data-flow.md):** Visual diagrams illustrating how data moves through the system for common user scenarios.
