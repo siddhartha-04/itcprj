@@ -1,6 +1,6 @@
 import express from "express";
-import { sprintCache, searchWorkItems } from "./sprintDataLoader.js";
-import { createUserStory, createTask, listWorkItems, getWorkItem } from "./workItemManager.js";
+import { sprintCache, searchWorkItems } from "../services/sprintDataLoader.js";
+import { createUserStory, createTask, listWorkItems, getWorkItem } from "../services/workItemManager.js";
 import dotenv from "dotenv";
 dotenv.config();
 
